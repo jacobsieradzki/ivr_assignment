@@ -12,14 +12,17 @@ class move_joints:
 		self.rate = rospy.Rate(30) # 30Hz
 		self.joints = [
 			{
+				"enabled": True,
 				"constant": 15,
 				"publisher": rospy.Publisher("/robot/joint2_position_controller/command", Float64, queue_size=10)
 			},
 			{
+				"enabled": True,
 				"constant": 18,
 				"publisher": rospy.Publisher("/robot/joint3_position_controller/command", Float64, queue_size=10)
 			},
 			{
+				"enabled": True,
 				"constant": 20,
 				"publisher": rospy.Publisher("/robot/joint4_position_controller/command", Float64, queue_size=10)
 			}
@@ -42,9 +45,14 @@ class move_joints:
 		while not rospy.is_shutdown():
 			cur_time = np.array([rospy.get_time()]) - t0
 
-			for joint in self.joints:
+			for joint in self.joints:				
 				angle = Float64()
-				angle.data = self.calculate_joint_angle(joint["constant"], cur_time)
+
+				if joint["enabled"] is True:
+					angle.data = self.calculate_joint_angle(joint["constant"], cur_time)
+				else:
+					angle.data = 0
+
 				joint["publisher"].publish(angle)
 
 			self.rate.sleep()
