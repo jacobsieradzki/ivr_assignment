@@ -67,8 +67,8 @@ class image_coordinate_processor:
   # 
   # Returns None if the joint cannot be seen in either camera angle.
   def find_ball_3d_coordinates(self, yz_hsv, xz_hsv, x0, y0, yz0, xz0, lower_bound_val, upper_bound_val):
-    yz_coords = self.find_ball_2d_coordinates(yz_image, yz_hsv, lower_bound_val, upper_bound_val)
-    xz_coords = self.find_ball_2d_coordinates(xz_image, xz_hsv, lower_bound_val, upper_bound_val)
+    yz_coords = self.find_ball_2d_coordinates(yz_hsv, lower_bound_val, upper_bound_val)
+    xz_coords = self.find_ball_2d_coordinates(xz_hsv, lower_bound_val, upper_bound_val)
 
     if yz_coords is None or xz_coords is None:
       return None # Joint cannot be seen
@@ -88,8 +88,8 @@ class image_coordinate_processor:
     xz_hsv = cv2.cvtColor(xz_camera_image, cv2.COLOR_BGR2HSV)
 
     # Base
-    yellow_yz_coords = self.find_ball_coordinates(yz_hsv, 25, 35)
-    yellow_xz_coords = self.find_ball_coordinates(xz_hsv, 25, 35)
+    yellow_yz_coords = self.find_ball_2d_coordinates(yz_hsv, 25, 35)
+    yellow_xz_coords = self.find_ball_2d_coordinates(xz_hsv, 25, 35)
 
     if yellow_yz_coords is None or yellow_xz_coords is None:
       print("Cannot see base yellow joint")
