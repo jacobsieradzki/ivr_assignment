@@ -84,18 +84,18 @@
   <link name="sphere_base">
     <visual>
       <geometry>
-        <sphere radius="0.5"/>
+        <sphere radius="0.7"/>
       </geometry>
-    <origin rpy="0 0 0"  xyz="0 0 0.25" />
+    <origin rpy="0 0 0"  xyz="0 0 0.35" />
     <material name="yellow">
        <color rgba="0.8 0.8 0 1"/>
     </material>
     </visual>
     <collision>
       <geometry>
-       <sphere radius="0.5"/>
+       <sphere radius="0.7"/>
       </geometry>
-      <origin rpy="0 0 0"  xyz="0 0 0.25" />
+      <origin rpy="0 0 0"  xyz="0 0 0.35" />
     </collision>
     <inertial>
       <mass value="0.00001"/>
@@ -106,18 +106,18 @@
   <link name="sphere0">
     <visual>
       <geometry>
-        <sphere radius="0.5"/>
+        <sphere radius="0.6"/>
       </geometry>
-    <origin rpy="0 0 0"  xyz="0 0 0.25" />
+    <origin rpy="0 0 0"  xyz="0 0 0.3" />
     <material name="blue">
        <color rgba="0 0 0.8 1"/>
     </material>
     </visual>
     <collision>
       <geometry>
-       <sphere radius="0.5"/>
+       <sphere radius="0.6"/>
       </geometry>
-      <origin rpy="0 0 0"  xyz="0 0 0.25" />
+      <origin rpy="0 0 0"  xyz="0 0 0.3" />
     </collision>
     <inertial>
       <mass value="0.1"/>
@@ -128,18 +128,18 @@
   <link name="sphere1">
     <visual>
       <geometry>
-        <sphere radius="0.3"/>
+        <sphere radius="0.4"/>
       </geometry>
-    <origin rpy="0 0 0"  xyz="0 0 0.15" />
+    <origin rpy="0 0 0"  xyz="0 0 0.2" />
     <material name="green">
        <color rgba="0 0.8 0 1"/>
     </material>
     </visual>
     <collision>
       <geometry>
-       <sphere radius="0.3"/>
+       <sphere radius="0.4"/>
       </geometry>
-      <origin rpy="0 0 0"  xyz="0 0 0.15" />
+      <origin rpy="0 0 0"  xyz="0 0 0.2" />
     </collision>
     <inertial>
       <mass value="0.00001"/>
@@ -300,19 +300,19 @@
   </gazebo>
 
   <gazebo reference="sphere_base">
-    <material>Gazebo/Black</material>
+    <material>Gazebo/Yellow</material>
   </gazebo>
 
   <gazebo reference="sphere0">
-    <material>Gazebo/Black</material>
+    <material>Gazebo/Blue</material>
   </gazebo>
 
   <gazebo reference="sphere1">
-    <material>Gazebo/Black</material>
+    <material>Gazebo/Green</material>
   </gazebo>
 
   <gazebo reference="sphere2">
-    <material>Gazebo/Black</material>
+    <material>Gazebo/Red</material>
   </gazebo>
 
 </robot>

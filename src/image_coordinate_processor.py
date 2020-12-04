@@ -86,7 +86,7 @@ class image_coordinate_processor:
     yz = yz0 - yz_coords[1]
     xz = xz0 - xz_coords[1]
     z = int((yz+xz)/2)
-    return np.array([x, y, z, yz, xz])
+    return np.array([x, y, z, yz, xz]) / 22.5
 
 
 
@@ -125,6 +125,9 @@ class image_coordinate_processor:
     return np.array([x, y, z, yz, xz])
 
 
+  def pixel2meter(self, blue):
+    return 3 / blue[2]
+
 
   # Process images and determine [x,y,z,yz,xz] for base and each joint
   # Returns a dictionary containing coordinates 3d coordinates for each joint
@@ -148,6 +151,7 @@ class image_coordinate_processor:
 
     coordinates = { 'yellow': [0, 0, 0] }
     joints = [['blue', 100, 130], ['green', 40, 70], ['red', 0, 10]]
+    a = 1
 
     for joint in joints:
       joint_id = joint[0]
@@ -178,11 +182,10 @@ class image_coordinate_processor:
     if target_coords is not None:
       yz_camera_image = self.add_circle_to_image(yz_camera_image, [y0-target_coords[1], z0-target_coords[3]], True)
       xz_camera_image = self.add_circle_to_image(xz_camera_image, [x0-target_coords[0], z0-target_coords[4]], True)
-    
 
-    # cv2.imshow('Camera 1 (yz)', yz_camera_image)
-    # cv2.imshow('Camera 2 (xz)', xz_camera_image)
-    # cv2.waitKey(100)
+    cv2.imshow('Camera 1 (yz)', yz_camera_image)
+    cv2.imshow('Camera 2 (xz)', xz_camera_image)
+    cv2.waitKey(100)
 
     return coordinates
 
@@ -218,8 +221,11 @@ class image_coordinate_processor:
           message.data = coords[key]
           publisher.publish(message)
 
-      distance_scale = coords["blue"][2] / 2.5
-      self.publish_target_coordinates(coords["target"] / distance_scale)
+      blue_coords = coords["blue"]
+      target_coords = coords["target"]
+      if blue_coords is not None and target_coords is not None:
+        distance_scale = blue_coords[2] / 2.5
+        self.publish_target_coordinates(target_coords / distance_scale)
 
     except CvBridgeError as e:
       print(e)
@@ -228,6 +234,7 @@ class image_coordinate_processor:
   # --- Helper methods to test ---
 
   def add_circle_to_image(self, image, coords, white):
+    return image
     if coords is None:
       return image
     else:
