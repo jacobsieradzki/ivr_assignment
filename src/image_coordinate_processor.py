@@ -23,7 +23,7 @@ class image_coordinate_processor:
     ], 10, 0.1, allow_headerless=True)
     self.sync.registerCallback(self.camera_sub)
 
-    self.previousResult = { "blue": [0,0,0,0,0], "green": [0,0,0,0,0], "yellow": [0,0,0,0,0] }
+    self.previousResult = { "yellow": [0,0,0,0,0], "blue": [0,0,0,0,0], "green": [0,0,0,0,0], "red": [0,0,0,0,0] }
     self.blue_coord_pub = rospy.Publisher("/jake/vision_coordinates/blue", Float64MultiArray, queue_size=10)
     self.green_coord_pub = rospy.Publisher("/jake/vision_coordinates/green", Float64MultiArray, queue_size=10)
     self.red_coord_pub = rospy.Publisher("/jake/vision_coordinates/red", Float64MultiArray, queue_size=10)
@@ -87,6 +87,42 @@ class image_coordinate_processor:
 
 
 
+  def find_target_2d_coordinates(self, hsv, lower_bound_val, upper_bound_val, w):
+    lower = np.array([lower_bound_val, 0,  0])
+    upper = np.array([upper_bound_val, 255, 255])
+
+    mask = cv2.inRange(hsv, lower, upper)
+    kernel = np.ones((5, 5), np.uint8)
+    dilated_mask = cv2.dilate(mask, kernel, iterations=3)
+    contours, hierarchy = cv2.findContours(dilated_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    for contour in contours:
+      approx = cv2.approxPolyDP(contour, 0.01*cv2.arcLength(contour, True), True)
+      if len(approx) > 6:
+        M = cv2.moments(contour)
+        cx = int(M['m10'] / M['m00'])
+        cy = int(M['m01'] / M['m00'])
+        return [cx, cy]
+
+    return None
+
+
+  def find_target_3d_coordinates(self, yz_hsv, xz_hsv, x0, y0, yz0, xz0, lower_bound_val, upper_bound_val):
+    yz_coords = self.find_target_2d_coordinates(yz_hsv, lower_bound_val, upper_bound_val, 'yz')
+    xz_coords = self.find_target_2d_coordinates(xz_hsv, lower_bound_val, upper_bound_val, 'xz')
+
+    if yz_coords is None or xz_coords is None:
+      return None # Target cannot be seen
+    
+    x = x0 - xz_coords[0]
+    y = y0 - yz_coords[0]
+    yz = yz0 - yz_coords[1]
+    xz = xz0 - xz_coords[1]
+    z = int((yz+xz)/2)
+    return np.array([x, y, z, yz, xz])
+
+
+
   # Process images and determine [x,y,z,yz,xz] for base and each joint
   # Returns a dictionary containing coordinates 3d coordinates for each joint
   def process_images(self, yz_camera_image, xz_camera_image):
@@ -122,18 +158,27 @@ class image_coordinate_processor:
         coords[0] = 0
         coords[1] = 0
 
-      yz_camera_image = self.add_circle_to_image(yz_camera_image, [y0-coords[1], z0-coords[3]])
-      xz_camera_image = self.add_circle_to_image(xz_camera_image, [x0-coords[0], z0-coords[4]])
+      # Circle dots on imshow image
+      yz_camera_image = self.add_circle_to_image(yz_camera_image, [y0-coords[1], z0-coords[3]], False)
+      xz_camera_image = self.add_circle_to_image(xz_camera_image, [x0-coords[0], z0-coords[4]], False)
 
       coordinates[joint_id] = coords
       self.previousResult[joint_id] = coords
 
-    # Circles
-    yz_camera_image = self.add_circle_to_image(yz_camera_image, [y0, z0])
-    xz_camera_image = self.add_circle_to_image(xz_camera_image, [x0, z0])
+    # Yellow base dots on imshow image
+    yz_camera_image = self.add_circle_to_image(yz_camera_image, [y0, z0], False)
+    xz_camera_image = self.add_circle_to_image(xz_camera_image, [x0, z0], False)
+    
+    
+    target_coords = self.find_target_3d_coordinates(yz_hsv, xz_hsv, x0, y0, yz0, xz0, 15, 20)
+    coordinates["target"] = target_coords
+    if target is not None:
+      yz_camera_image = self.add_circle_to_image(yz_camera_image, [y0-target_coords[1], z0-target_coords[3]], True)
+      xz_camera_image = self.add_circle_to_image(xz_camera_image, [x0-target_coords[0], z0-target_coords[4]], True)
+    
 
-    cv2.imshow('yz camera 1', yz_camera_image)
-    cv2.imshow('xz camera 2', xz_camera_image)
+    cv2.imshow('Camera 1 (yz)', yz_camera_image)
+    cv2.imshow('Camera 2 (xz)', xz_camera_image)
     cv2.waitKey(100)
 
     return coordinates
@@ -146,6 +191,9 @@ class image_coordinate_processor:
       yz_camera_image = self.bridge.imgmsg_to_cv2(yz_camera_data, "bgr8")
       xz_camera_image = self.bridge.imgmsg_to_cv2(xz_camera_data, "bgr8")
       coords = self.process_images(yz_camera_image, xz_camera_image)
+
+      if coords is None:
+        return
 
       joints = { "blue": self.blue_coord_pub, "green": self.green_coord_pub, "red": self.red_coord_pub }
       for key in joints:
@@ -161,11 +209,14 @@ class image_coordinate_processor:
 
   # --- Helper methods to test ---
 
-  def add_circle_to_image(self, image, coords):
+  def add_circle_to_image(self, image, coords, white):
     if coords is None:
       return image
     else:
-      return cv2.circle(image, (coords[0], coords[1]), 3, (0, 0, 0), -1)
+      if white:
+        return cv2.circle(image, (coords[0], coords[1]), 3, (255, 255, 255), -1)
+      else:
+        return cv2.circle(image, (coords[0], coords[1]), 3, (0, 0, 0), -1)
 
   # ------------------------------
 
