@@ -3,5 +3,6 @@
 	<group ns="/q2">
 		<node name="move_joints" pkg="ivr_assignment" type="move_joints.py" args="$(find ivr_assignment)/src/move_joints.py" />
 		<node name="image_coordinate_processor" pkg="ivr_assignment" type="image_coordinate_processor.py" args="$(find ivr_assignment)/src/image_coordinate_processor.py" />
+		<node name="joint_angle_estimator" pkg="ivr_assignment" type="joint_angle_estimator.py" args="$(find ivr_assignment)/src/joint_angle_estimator.py" />
 	</group>
 </launch>

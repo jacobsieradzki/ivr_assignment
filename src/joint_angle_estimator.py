@@ -23,23 +23,9 @@ class joint_angle_estimator:
 	    ], 10, 0.1, allow_headerless=True)
 	    self.sync.registerCallback(self.coordinate_callback)
 
-	    self.n_tests = 0
-
-	    self.j2t = rospy.Subscriber("/robot/joint2_position_controller/command", Float64, self.j2tc)
-	    self.j2v = 0
-	    self.j2ns = 0
-
-	    self.j3t = rospy.Subscriber("/robot/joint3_position_controller/command", Float64, self.j3tc)
-	    self.j3v = 0
-	    self.j3ns = 0
-
-	    self.j4t = rospy.Subscriber("/robot/joint4_position_controller/command", Float64, self.j4tc)
-	    self.j4v = 0
-	    self.j4ns = 0
-
-	def j2tc(self, msg): self.j2v = msg.data
-	def j3tc(self, msg): self.j3v = msg.data
-	def j4tc(self, msg): self.j4v = msg.data
+	    self.joint_2_pub = rospy.Publisher("/jake/vision_coordinates/joint2", Float64, queue_size=10)
+	    self.joint_3_pub = rospy.Publisher("/jake/vision_coordinates/joint3", Float64, queue_size=10)
+	    self.joint_4_pub = rospy.Publisher("/jake/vision_coordinates/joint4", Float64, queue_size=10)
 
 
 	# Used for the blue to green joint angle for rotation about the x or y axis.
@@ -76,19 +62,15 @@ class joint_angle_estimator:
 		green = np.asarray(green_message.data)
 		red = np.asarray(red_message.data)
 
-		joint_2_angle = self.calculate_primary_angle(blue, green, 1, 3)
-		joint_3_angle = -self.calculate_primary_angle(blue, green, 0, 4)
-		joint_4_angle = self.calculate_secondary_angle(blue, green, red, joint_2_angle)
-		
-	
-	# --- Helper methods to test ---	
-	
-	# Print the estimated angle, the real angle, the difference and the relevant coordinates.
-	def debug_angle(self, calc, real, from_coords, to_coords):
-		diff = abs(real-calc)
-		print(round(calc, 2), round(real, 2), round(diff, 2), from_coords, to_coords)
-		
-	# ------------------------------
+		joint_2_angle = Float64()
+		joint_2_angle.data = self.calculate_primary_angle(blue, green, 1, 3)
+		self.joint_2_pub.publish(joint_2_angle)
+		joint_3_angle = Float64()
+		joint_3_angle.data = -self.calculate_primary_angle(blue, green, 0, 4)
+		self.joint_3_pub.publish(joint_3_angle)
+		joint_4_angle = Float64()
+		joint_4_angle.data = self.calculate_secondary_angle(blue, green, red, joint_2_angle)
+		self.joint_4_pub.publish(joint_4_angle)
 
 
 def main(args):

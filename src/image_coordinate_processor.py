@@ -27,6 +27,9 @@ class image_coordinate_processor:
     self.blue_coord_pub = rospy.Publisher("/jake/vision_coordinates/blue", Float64MultiArray, queue_size=10)
     self.green_coord_pub = rospy.Publisher("/jake/vision_coordinates/green", Float64MultiArray, queue_size=10)
     self.red_coord_pub = rospy.Publisher("/jake/vision_coordinates/red", Float64MultiArray, queue_size=10)
+    self.target_x_pub = rospy.Publisher("/jake/vision_coordinates/target_x", Float64, queue_size=10)
+    self.target_y_pub = rospy.Publisher("/jake/vision_coordinates/target_y", Float64, queue_size=10)
+    self.target_z_pub = rospy.Publisher("/jake/vision_coordinates/target_z", Float64, queue_size=10)
 
     self.bridge = CvBridge()
 
@@ -98,7 +101,7 @@ class image_coordinate_processor:
 
     for contour in contours:
       approx = cv2.approxPolyDP(contour, 0.01*cv2.arcLength(contour, True), True)
-      if len(approx) > 6:
+      if len(approx) > 7:
         M = cv2.moments(contour)
         cx = int(M['m10'] / M['m00'])
         cy = int(M['m01'] / M['m00'])
@@ -172,17 +175,29 @@ class image_coordinate_processor:
     
     target_coords = self.find_target_3d_coordinates(yz_hsv, xz_hsv, x0, y0, yz0, xz0, 15, 20)
     coordinates["target"] = target_coords
-    if target is not None:
+    if target_coords is not None:
       yz_camera_image = self.add_circle_to_image(yz_camera_image, [y0-target_coords[1], z0-target_coords[3]], True)
       xz_camera_image = self.add_circle_to_image(xz_camera_image, [x0-target_coords[0], z0-target_coords[4]], True)
     
 
-    cv2.imshow('Camera 1 (yz)', yz_camera_image)
-    cv2.imshow('Camera 2 (xz)', xz_camera_image)
-    cv2.waitKey(100)
+    # cv2.imshow('Camera 1 (yz)', yz_camera_image)
+    # cv2.imshow('Camera 2 (xz)', xz_camera_image)
+    # cv2.waitKey(100)
 
     return coordinates
 
+
+  # Publish target coordinates separately
+  def publish_target_coordinates(self, coords):
+    x = Float64()
+    x.data = -coords[0]
+    self.target_x_pub.publish(x)
+    y = Float64()
+    y.data = -coords[1]
+    self.target_y_pub.publish(y)
+    z = Float64()
+    z.data = coords[2]
+    self.target_z_pub.publish(z)
 
 
   # Receive the camera data from both camera1 and camera2 and process
@@ -202,6 +217,9 @@ class image_coordinate_processor:
           message = Float64MultiArray()
           message.data = coords[key]
           publisher.publish(message)
+
+      distance_scale = coords["blue"][2] / 2.5
+      self.publish_target_coordinates(coords["target"] / distance_scale)
 
     except CvBridgeError as e:
       print(e)
